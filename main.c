@@ -12,6 +12,7 @@ void debugmenu();
 void proJect();
 
 struct point rotate_xz(struct point vec3, float angle);
+struct point rotate_yz(struct point vec3, float angle);
 struct point rasterise(struct point vec3);
 
 struct point {
@@ -120,7 +121,9 @@ void cursor() {
   } while (open);
 }
 
-int rotedangul = 0;
+int rotatedxz = 0;
+int rotatedyz = 0;
+
 int autor = 0;
 int autord = 1;
 
@@ -129,7 +132,7 @@ void *render_thread(void *arg) {
   while (1) {
     if (autor) {
 
-      rotedangul = rotedangul + (autord == 0 ? -1 : autord);
+      rotatedxz = rotatedxz + (autord == 0 ? -1 : autord);
     }
 
     usleep(40000);
@@ -150,8 +153,12 @@ void proJect() {
     printf("\033[2J");
     for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 4; j++) {
+
         struct point potter =
-            rotate_xz(vector[i][j], rotedangul * 3.14159f / 180.0f);
+            rotate_xz(vector[i][j], rotatedxz * 3.14159f / 180.0f);
+        potter =
+            rotate_yz(potter, rotatedyz * 3.14159f / 180.0f);
+
         potter = rasterise(potter);
 
         printf("\033[%d;%dH", (int)roundf(potter.y - potter.z / 2),
@@ -162,7 +169,7 @@ void proJect() {
 
     if (jointa) {
       printf("\033[%.0f;%.0fH", jointer.x, jointer.y);
-      printf("p %d", rotedangul);
+      printf("p %d", rotatedxz);
     }
 
     // printf("cur %d %d", cur.x, cur.y);
@@ -181,13 +188,25 @@ void proJect() {
 
       case 'a':
         pthread_mutex_lock(&lockerooni);
-        rotedangul--;
+        rotatedxz--;
         pthread_mutex_unlock(&lockerooni);
         break;
 
       case 'd':
         pthread_mutex_lock(&lockerooni);
-        rotedangul++;
+        rotatedxz++;
+        pthread_mutex_unlock(&lockerooni);
+        break;
+
+      case 'w':
+        pthread_mutex_lock(&lockerooni);
+        rotatedyz--;
+        pthread_mutex_unlock(&lockerooni);
+        break;
+
+      case 's':
+        pthread_mutex_lock(&lockerooni);
+        rotatedyz++;
         pthread_mutex_unlock(&lockerooni);
         break;
 
@@ -279,3 +298,15 @@ struct point rotate_xz(struct point vec3, float angle) {
   };
   return roated;
 }
+
+struct point rotate_yz(struct point vec3, float angle) {
+  float c = cosf(angle);
+  float s = sinf(angle);
+  struct point roated = {
+      vec3.x,
+      vec3.y * c - vec3.z * s,
+      vec3.x * s + vec3.z * c,
+  };
+  return roated;
+}
+
